@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
-  <title>Um Convite — Tiago Faria</title>
+  <title>Um Convite · Tiago Faria</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
   <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=Cormorant+SC:wght@300;400&display=swap" rel="stylesheet"/>
@@ -550,7 +550,7 @@
         </h2>
         <p class="body-text">
           Este convite é seu, e apenas seu. Infelizmente, eu não pude chamar todo mundo
-          que quis — a lista foi limitada. Mas se você está aqui, é porque de alguma
+          que quis. A lista foi limitada. Mas se você está aqui, é porque de alguma
           forma você é <span class="accent">bem importante</span> pra mim.
           Obrigado por fazer parte.
         </p>
@@ -568,8 +568,8 @@
         <li class="moment-line"><span class="moment-text">Culto e Louvor</span></li>
         <li class="moment-line"><span class="moment-text">Sinuca</span></li>
         <li class="moment-line"><span class="moment-text">Poker Night</span></li>
-        <li class="moment-line"><span class="moment-text">Open Bar sem álcool</span></li>
         <li class="moment-line"><span class="moment-text">Noite de Massa</span></li>
+        <li class="moment-line"><span class="moment-text">Open Bar sem álcool</span></li>
         <li class="moment-line"><span class="moment-text">Quiz com Prêmio</span></li>
         <li class="moment-line last"><span class="moment-text">e outras paradas maneiras aí</span></li>
       </ul>
@@ -597,7 +597,7 @@
           </div>
           <p class="dress-note">
             Pode vir com sua roupa mais bonita, aquela que você guarda para ocasiões especiais.
-            Mas não se preocupe muito com isso — se não tiver uma roupa específica,
+            Mas não se preocupe muito com isso. Se não tiver uma roupa específica,
             o que importa mesmo é <span class="accent">você estar aqui</span>.
           </p>
         </div>
@@ -675,90 +675,137 @@
       iPlay=document.getElementById('ico-play'),
       iPause=document.getElementById('ico-pause');
 
-  /* ── Upbeat Jazz via Web Audio ──────────────────────── */
-  var actx=null, master=null, playing=false, timers=[];
-  var BPM=138, BEAT=60/138;
+  /* ── Restaurant Jazz: saxophone + piano + soft brush ── */
+  var actx=null, master=null, reverb=null, playing=false, timers=[];
+  var BPM=96, BEAT=60/96; // relaxed bossa/lounge tempo
 
-  // Brighter, upbeat jazz chords (major voicings)
-  // I - IV - ii - V in C (restaurant bossa/swing feel)
-  var PROG=[
-    {bass:[65.41,82.41,98.00,123.47], // C: C E G B (Cmaj7)
-     chord:[130.81,164.81,196.00,246.94,329.63]},
-    {bass:[87.31,110.00,130.81,146.83], // F: F A C D (Fmaj9)
-     chord:[174.61,220.00,261.63,293.66,349.23]},
-    {bass:[73.42,87.31,110.00,130.81], // Dm: D F A C (Dm7)
-     chord:[146.83,174.61,220.00,261.63,329.63]},
-    {bass:[98.00,123.47,146.83,174.61], // G: G B D F (G7)
-     chord:[196.00,246.94,293.66,349.23,392.00]}
+  // Chord progression: Cmaj7 → Am7 → Dm7 → G7
+  var CHORDS=[
+    {root:65.41, bass:[65.41,73.42,82.41,98.00],  // Cmaj7: C D E G (walking)
+     pad:[130.81,164.81,196.00,246.94]},
+    {root:55.00, bass:[55.00,65.41,73.42,82.41],   // Am7: A C D E
+     pad:[110.00,130.81,164.81,220.00]},
+    {root:73.42, bass:[73.42,82.41,98.00,110.00],  // Dm7: D E G A
+     pad:[146.83,174.61,220.00,261.63]},
+    {root:98.00, bass:[98.00,110.00,123.47,130.81],// G7: G A B C
+     pad:[196.00,246.94,293.66,349.23]}
   ];
 
-  function note(freq,vol,t,attack,hold,type){
-    var o=actx.createOscillator(),g=actx.createGain(),f=actx.createBiquadFilter();
-    o.type=type||'sine'; o.frequency.value=freq;
-    o.detune.value=(Math.random()-.5)*3;
-    f.type='lowpass'; f.frequency.value=Math.min(freq*6,3000); f.Q.value=.4;
-    g.gain.setValueAtTime(.0001,t);
-    g.gain.linearRampToValueAtTime(vol,t+attack);
-    g.gain.setValueAtTime(vol,t+hold*.7);
-    g.gain.exponentialRampToValueAtTime(.0001,t+hold);
-    o.connect(f); f.connect(g); g.connect(master);
-    o.start(t); o.stop(t+hold+.05);
+  // Sax melody (pentatonic, one note per beat)
+  var MELODY=[
+    [329.63,392.00,440.00,392.00],  // E4 G4 A4 G4  over Cmaj7
+    [440.00,392.00,329.63,293.66],  // A4 G4 E4 D4  over Am7
+    [293.66,349.23,392.00,440.00],  // D4 F4 G4 A4  over Dm7
+    [392.00,440.00,493.88,392.00]   // G4 A4 B4 G4  over G7
+  ];
+
+  function piano(freq,vol,t,dur){
+    var o=actx.createOscillator(),o2=actx.createOscillator();
+    var g=actx.createGain(),g2=actx.createGain();
+    o.type='sine'; o.frequency.value=freq;
+    o2.type='sine'; o2.frequency.value=freq*2; g2.gain.value=.18;
+    g.gain.setValueAtTime(vol,t);
+    g.gain.exponentialRampToValueAtTime(vol*.35,t+.05);
+    g.gain.exponentialRampToValueAtTime(.0001,t+dur);
+    o.connect(g); o2.connect(g2); g2.connect(g); g.connect(reverb); g.connect(master);
+    o.start(t); o.stop(t+dur+.1);
+    o2.start(t); o2.stop(t+dur+.1);
   }
 
-  function hihat(t,vol){
-    var buf=actx.createBuffer(1,actx.sampleRate*.04,actx.sampleRate);
+  function bass(freq,vol,t,dur){
+    var o=actx.createOscillator(),g=actx.createGain(),f=actx.createBiquadFilter();
+    o.type='triangle'; o.frequency.value=freq;
+    f.type='lowpass'; f.frequency.value=320; f.Q.value=.8;
+    g.gain.setValueAtTime(.0001,t);
+    g.gain.linearRampToValueAtTime(vol,t+.02);
+    g.gain.exponentialRampToValueAtTime(.0001,t+dur*.85);
+    o.connect(f); f.connect(g); g.connect(master);
+    o.start(t); o.stop(t+dur+.05);
+  }
+
+  function sax(freq,vol,t,dur){
+    var osc=actx.createOscillator();
+    var lfo=actx.createOscillator(),lfoG=actx.createGain();
+    var flt=actx.createBiquadFilter(),flt2=actx.createBiquadFilter();
+    var g=actx.createGain();
+    osc.type='sawtooth'; osc.frequency.value=freq;
+    lfo.type='sine'; lfo.frequency.value=5.5; lfoG.gain.value=5;// vibrato
+    flt.type='bandpass'; flt.frequency.value=freq*2.2; flt.Q.value=3.5;
+    flt2.type='peaking'; flt2.frequency.value=1800; flt2.gain.value=6; flt2.Q.value=2;
+    g.gain.setValueAtTime(.0001,t);
+    g.gain.linearRampToValueAtTime(vol,t+.18);
+    g.gain.setValueAtTime(vol,t+dur-.12);
+    g.gain.linearRampToValueAtTime(.0001,t+dur);
+    lfo.connect(lfoG); lfoG.connect(osc.frequency);
+    osc.connect(flt); flt.connect(flt2); flt2.connect(g);
+    g.connect(reverb); g.connect(master);
+    lfo.start(t); lfo.stop(t+dur+.1);
+    osc.start(t); osc.stop(t+dur+.1);
+  }
+
+  function brush(t,vol,dur){
+    var buf=actx.createBuffer(1,Math.round(actx.sampleRate*dur),actx.sampleRate);
     var d=buf.getChannelData(0);
     for(var i=0;i<d.length;i++) d[i]=Math.random()*2-1;
     var src=actx.createBufferSource(),g=actx.createGain(),f=actx.createBiquadFilter();
-    src.buffer=buf; f.type='highpass'; f.frequency.value=8000;
-    g.gain.setValueAtTime(vol,t); g.gain.exponentialRampToValueAtTime(.0001,t+.04);
+    src.buffer=buf; f.type='bandpass'; f.frequency.value=3200; f.Q.value=.7;
+    g.gain.setValueAtTime(vol,t); g.gain.exponentialRampToValueAtTime(.0001,t+dur);
     src.connect(f); f.connect(g); g.connect(master);
     src.start(t);
   }
 
-  function scheduleBar(startT,barIdx){
-    var bar=PROG[barIdx%PROG.length];
-    // Walking bass (quarter notes × 4)
-    bar.bass.forEach(function(freq,i){
-      note(freq,.22,startT+i*BEAT,.018,BEAT*.8,'triangle');
-    });
-    // Chord pad on beats 1 & 3
+  function makeReverb(){
+    var dur=2.4, decay=2.2, sr=actx.sampleRate;
+    var len=Math.round(sr*dur);
+    var buf=actx.createBuffer(2,len,sr);
+    for(var c=0;c<2;c++){
+      var d=buf.getChannelData(c);
+      for(var i=0;i<len;i++) d[i]=(Math.random()*2-1)*Math.pow(1-i/len,decay);
+    }
+    var conv=actx.createConvolver(); conv.buffer=buf;
+    var wet=actx.createGain(); wet.gain.value=.22;
+    conv.connect(wet); wet.connect(master);
+    return conv;
+  }
+
+  function scheduleBar(startT,bi){
+    var ch=CHORDS[bi%4], mel=MELODY[bi%4];
+    // Piano chords on beats 1 and 3
     [0,2].forEach(function(b){
-      bar.chord.forEach(function(freq,i){
-        note(freq,.042-i*.005,startT+b*BEAT,.08,BEAT*1.8,'sine');
+      ch.pad.forEach(function(f,i){
+        piano(f,.038-i*.005,startT+b*BEAT,BEAT*2.1);
       });
     });
-    // Hi-hat on every beat (swing: 2nd 8th delayed)
-    for(var b=0;b<4;b++){
-      hihat(startT+b*BEAT,.08);
-      hihat(startT+b*BEAT+BEAT*.62,.05); // swung 8th
-    }
-    // Occasional bright high note (melody hint)
-    if(Math.random()>.5){
-      var mel=[523.25,587.33,659.25,698.46,783.99];
-      note(mel[Math.floor(Math.random()*mel.length)],.06,
-           startT+[1,2,3][Math.floor(Math.random()*3)]*BEAT,.04,BEAT*.6,'sine');
-    }
+    // Walking bass on every beat
+    ch.bass.forEach(function(f,i){
+      bass(f,.24,startT+i*BEAT,BEAT*.88);
+    });
+    // Sax melody on every beat
+    mel.forEach(function(f,i){
+      sax(f,.12,startT+i*BEAT,BEAT*.78);
+    });
+    // Soft brush on 2 and 4
+    [1,3].forEach(function(b){
+      brush(startT+b*BEAT,.028,.11);
+      brush(startT+b*BEAT+BEAT*.5,.014,.08); // off-beat ghost
+    });
   }
 
   var barIdx=0, nextBarTime=0;
   function scheduler(){
-    while(nextBarTime<actx.currentTime+.4){
+    while(nextBarTime<actx.currentTime+.5){
       scheduleBar(nextBarTime,barIdx++);
       nextBarTime+=BEAT*4;
     }
-    timers.push(setTimeout(scheduler,100));
+    timers.push(setTimeout(scheduler,150));
   }
 
   function startMusic(){
     if(!actx){
       actx=new(window.AudioContext||window.webkitAudioContext)();
       master=actx.createGain();
-      var dly=actx.createDelay(2),dlyG=actx.createGain(),wet=actx.createGain();
-      dly.delayTime.value=.45; dlyG.gain.value=.22; wet.gain.value=.28;
-      master.connect(dly); dly.connect(dlyG); dlyG.connect(dly);
-      dly.connect(wet); wet.connect(actx.destination);
       master.connect(actx.destination);
+      reverb=makeReverb();
     }
     if(actx.state==='suspended') actx.resume();
     master.gain.setValueAtTime(.0001,actx.currentTime);
@@ -791,7 +838,7 @@
     document.getElementById('guest-display').textContent=name;
     document.getElementById('wa-btn').href=
       'https://wa.me/5532998155612?text='+
-      encodeURIComponent('Oi Tiago! Sou '+name+' e confirmo minha presença no seu aniversário. ');
+      encodeURIComponent('Pode confirmar minha presença ✅');
     startMusic(); // direto no gesto do usuário
     setTimeout(function(){
       mBtn.classList.add('show');
