@@ -325,6 +325,38 @@
     }
     .moment-line.last:hover .moment-text{color:var(--silver)}
 
+    /* ══ SPOILER MOSAIC ════════════════════════════════════ */
+    .spoiler-mosaic{
+      display:flex;flex-wrap:wrap;gap:clamp(.8rem,2.5vw,1.3rem);
+      justify-content:center;align-items:flex-end;
+      padding:2.5rem 0 1rem;
+    }
+    .simg{
+      position:relative;
+      width:clamp(100px,26vw,145px);aspect-ratio:1/1;
+      border-radius:13px;overflow:hidden;
+      border:1.5px solid rgba(184,196,212,.32);
+      background:var(--navy-m);
+      opacity:0;
+      transform:scale(.78) translateY(22px) rotate(var(--rot,0deg));
+      transition:opacity .6s cubic-bezier(.22,.68,0,1.25),transform .6s cubic-bezier(.22,.68,0,1.25);
+      animation:simg-glow 3s ease-in-out infinite;
+      animation-delay:var(--gd,0s);
+    }
+    .simg.vis{opacity:1;transform:scale(1) translateY(0) rotate(var(--rot,0deg))}
+    .simg img{width:100%;height:100%;object-fit:cover;display:block;
+      filter:brightness(.92) saturate(.88);}
+    .simg:hover img{filter:brightness(1) saturate(1);transition:filter .3s}
+    .simg-1{--rot:-2.5deg;--gd:0s;   margin-top:2rem}
+    .simg-2{--rot:1.8deg; --gd:.35s; margin-top:0}
+    .simg-3{--rot:-1.2deg;--gd:.7s;  margin-top:1rem}
+    .simg-4{--rot:2.2deg; --gd:1.05s;margin-top:-.4rem}
+    .simg-5{--rot:-1.6deg;--gd:.55s; margin-top:1.6rem}
+    .simg-6{--rot:1.2deg; --gd:.9s;  margin-top:.2rem}
+    @keyframes simg-glow{
+      0%,100%{box-shadow:0 0 7px rgba(184,196,212,.2),0 0 18px rgba(184,196,212,.06)}
+      50%{box-shadow:0 0 16px rgba(184,196,212,.46),0 0 36px rgba(184,196,212,.18)}
+    }
     /* ══ DRESS CODE ═══════════════════════════════════════ */
     .dress-card{
       padding:clamp(2rem,5vw,3rem) clamp(1.5rem,4vw,2.8rem);
@@ -549,9 +581,8 @@
           para comemorarmos <em>meus <span class="accent">21</span> anos.</em>
         </h2>
         <p class="body-text">
-          Este convite é seu, e apenas seu. Infelizmente, eu não pude chamar todo mundo
-          que quis. A lista foi limitada. Mas se você está aqui, é porque de alguma
-          forma você é <span class="accent">bem importante</span> pra mim.
+          Este convite é seu, e apenas seu. A lista precisou ser limitada, mas se você está aqui,
+          é porque de alguma forma você é <span class="accent">bem importante</span> pra mim.
           Obrigado por fazer parte.
         </p>
       </div>
@@ -563,16 +594,14 @@
         <h2 class="sec-title" style="margin-bottom:2rem">Só uns <em>spoilers</em> dessa noite...</h2>
       </div>
 
-      <ul class="moments-list" aria-label="Momentos da noite">
-        <li class="moment-line"><span class="moment-text">Coffee Break</span></li>
-        <li class="moment-line"><span class="moment-text">Culto e Louvor</span></li>
-        <li class="moment-line"><span class="moment-text">Sinuca</span></li>
-        <li class="moment-line"><span class="moment-text">Poker Night</span></li>
-        <li class="moment-line"><span class="moment-text">Noite de Massa</span></li>
-        <li class="moment-line"><span class="moment-text">Open Bar sem álcool</span></li>
-        <li class="moment-line"><span class="moment-text">Quiz com Prêmio</span></li>
-        <li class="moment-line last"><span class="moment-text">e outras paradas maneiras aí</span></li>
-      </ul>
+      <div class="spoiler-mosaic">
+        <figure class="simg simg-1"><img src="photos/1.jpg" alt=""></figure>
+        <figure class="simg simg-2"><img src="photos/2.jpg" alt=""></figure>
+        <figure class="simg simg-3"><img src="photos/3.jpg" alt=""></figure>
+        <figure class="simg simg-4"><img src="photos/4.jpg" alt=""></figure>
+        <figure class="simg simg-5"><img src="photos/5.jpg" alt=""></figure>
+        <figure class="simg simg-6"><img src="photos/6.jpg" alt=""></figure>
+      </div>
     </div>
   </section>
 
@@ -834,7 +863,7 @@
     startMusic(); // direto no gesto do usuário
     setTimeout(function(){
       mBtn.classList.add('show');
-      initReveal(); initMoments();
+      initReveal(); initMosaic();
     },300);
   }
 
@@ -858,14 +887,18 @@
       .forEach(function(el){obs.observe(el);});
   }
 
-  function initMoments(){
-    var lines=document.querySelectorAll('.moment-line');
+  function initMosaic(){
+    var imgs=document.querySelectorAll('.simg');
     var obs2=new IntersectionObserver(function(entries){
       entries.forEach(function(e){
-        if(e.isIntersecting){e.target.classList.add('vis');obs2.unobserve(e.target);}
+        if(e.isIntersecting){
+          var i=Array.from(imgs).indexOf(e.target);
+          setTimeout(function(){e.target.classList.add('vis');},i*140);
+          obs2.unobserve(e.target);
+        }
       });
-    },{threshold:.15});
-    lines.forEach(function(el,i){el.style.transitionDelay=(i*95)+'ms';obs2.observe(el);});
+    },{threshold:.12});
+    imgs.forEach(function(el){obs2.observe(el);});
   }
 })();
 </script>
