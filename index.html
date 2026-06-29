@@ -713,7 +713,7 @@
       iPause=document.getElementById('ico-pause');
 
   /* ── Lo-fi Jazz: Rhodes + bass + vinyl crackle ── */
-  var actx=null, master=null, reverb=null, playing=false, timers=[], crackleNode=null;
+  var actx=null, master=null, reverb=null, playing=false, timers=[], crackleNode=null, suspendTimer=null;
   var BPM=82, BEAT=60/82;
 
   // ii-V-I-vi em C, progride despacio (2 bars each feel)
@@ -830,6 +830,7 @@
   }
 
   function startMusic(){
+    if(suspendTimer){clearTimeout(suspendTimer);suspendTimer=null;}
     if(!actx){
       actx=new(window.AudioContext||window.webkitAudioContext)();
       master=actx.createGain();
@@ -837,18 +838,22 @@
       reverb=makeReverb();
     }
     if(actx.state==='suspended') actx.resume();
-    master.gain.setValueAtTime(.0001,actx.currentTime);
-    master.gain.linearRampToValueAtTime(.45,actx.currentTime+2.5);
-    barIdx=0; nextBarTime=actx.currentTime+.1;
+    master.gain.cancelScheduledValues(actx.currentTime);
+    master.gain.setValueAtTime(master.gain.value||.0001,actx.currentTime);
+    master.gain.linearRampToValueAtTime(.65,actx.currentTime+2.2);
+    barIdx=0; nextBarTime=actx.currentTime+.05;
     scheduler();
     playing=true; setPlaying(true);
   }
 
   function stopMusic(){
     if(!actx) return;
-    master.gain.linearRampToValueAtTime(.0001,actx.currentTime+1);
+    master.gain.cancelScheduledValues(actx.currentTime);
+    master.gain.setValueAtTime(master.gain.value,actx.currentTime);
+    master.gain.linearRampToValueAtTime(.0001,actx.currentTime+1.2);
     timers.forEach(clearTimeout); timers=[];
-    setTimeout(function(){actx.suspend();},1200);
+    if(crackleNode){try{crackleNode.stop();}catch(e){} crackleNode=null;}
+    suspendTimer=setTimeout(function(){if(actx)actx.suspend();},1400);
     playing=false; setPlaying(false);
   }
 
