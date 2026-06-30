@@ -45,32 +45,35 @@
       font-size:clamp(1.4rem,4.5vw,1.75rem);font-weight:300;
       line-height:1.45;color:var(--silver-b);margin-bottom:.8rem
     }
-    .popup-sub{
-      font-size:clamp(1rem,3vw,1.12rem);font-weight:300;
-      color:var(--silver-d);line-height:1.75;margin-bottom:1.6rem
+    .popup-title{
+      font-family:'Cormorant Garamond',serif;
+      font-size:clamp(1.45rem,4.8vw,1.9rem);font-weight:300;font-style:italic;
+      line-height:1.4;color:var(--white);margin-bottom:1rem
     }
-    .popup-accent{
-      color:var(--blue);font-weight:400;
+    .popup-title strong{font-weight:400;font-style:normal;color:var(--blue)}
+    .popup-sub{
+      font-size:clamp(.88rem,2.6vw,1rem);font-weight:300;
+      color:var(--silver-d);line-height:1.7;margin-bottom:1.5rem
     }
     #popup-input{
-      width:100%;background:rgba(90,175,255,.07);
-      border:1px solid rgba(90,175,255,.35);border-radius:1px;
+      width:100%;background:rgba(255,255,255,.06);
+      border:1px solid rgba(184,196,212,.25);border-radius:1px;
       padding:1rem 1.3rem;
       font-family:'Cormorant Garamond',serif;font-size:clamp(1.25rem,4vw,1.5rem);
       font-weight:300;color:var(--white);outline:none;text-align:center;
-      transition:border-color .3s,background .3s;-webkit-appearance:none;appearance:none
+      transition:border-color .3s;-webkit-appearance:none;appearance:none
     }
-    #popup-input::placeholder{color:rgba(90,175,255,.4)}
-    #popup-input:focus{border-color:rgba(90,175,255,.7);background:rgba(90,175,255,.11)}
+    #popup-input::placeholder{color:var(--silver-d);opacity:.5}
+    #popup-input:focus{border-color:rgba(184,196,212,.55)}
     #popup-btn{
-      margin-top:1.1rem;width:100%;padding:1.05rem 2rem;
+      margin-top:1.3rem;width:100%;padding:1.05rem 2rem;
       font-family:'Cormorant SC',serif;font-size:clamp(.72rem,2.2vw,.82rem);
-      letter-spacing:.36em;text-transform:uppercase;color:#9dd4ff;
-      background:rgba(90,175,255,.12);border:1px solid rgba(90,175,255,.35);
+      letter-spacing:.36em;text-transform:uppercase;color:var(--silver-b);
+      background:rgba(255,255,255,.07);border:1px solid rgba(184,196,212,.3);
       border-radius:1px;cursor:pointer;transition:all .3s;
       -webkit-tap-highlight-color:transparent;min-height:52px
     }
-    #popup-btn:hover,#popup-btn:active{background:rgba(90,175,255,.22);border-color:rgba(90,175,255,.6)}
+    #popup-btn:hover,#popup-btn:active{background:rgba(255,255,255,.13);border-color:rgba(184,196,212,.52)}
 
     /* ══ MAIN ══════════════════════════════════════════════ */
     #main{opacity:0;transition:opacity 1s ease}
@@ -493,7 +496,8 @@
 <div id="popup-overlay" role="dialog" aria-modal="true">
   <div id="popup-box">
     <span class="popup-crown">Convite Exclusivo</span>
-    <p class="popup-sub">Esse é um convite do Tiago para você.<br>Para acessar, digite seu <span class="popup-accent">primeiro nome</span></p>
+    <h1 class="popup-title">Esse é um convite do Tiago<br>para <strong>você.</strong></h1>
+    <p class="popup-sub">Para acessar, digite seu primeiro nome</p>
     <input id="popup-input" type="text" placeholder="Seu nome"
       autocomplete="given-name" maxlength="40" inputmode="text"/>
     <button id="popup-btn" type="button">Acessar o convite</button>
@@ -687,6 +691,8 @@
   </footer>
 </div>
 
+<audio id="bg-audio" src="esse jazz.mp3" preload="none"></audio>
+
 <!-- Music button -->
 <button id="music-btn" aria-label="Pausar / tocar música">
   <svg id="ico-play" viewBox="0 0 24 24" fill="none" stroke="var(--silver-b)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
@@ -709,148 +715,30 @@
       iPlay=document.getElementById('ico-play'),
       iPause=document.getElementById('ico-pause');
 
-  /* ── Lo-fi Jazz: Rhodes + bass + vinyl crackle ── */
-  var actx=null, master=null, reverb=null, playing=false, timers=[], crackleNode=null, suspendTimer=null;
-  var BPM=82, BEAT=60/82;
-
-  // ii-V-I-vi em C, progride despacio (2 bars each feel)
-  var PROG=[
-    {root:73.42,  pad:[110.00,130.81,164.81,220.00,261.63],   // Dm9
-     scale:[146.83,164.81,174.61,220.00,261.63,293.66,329.63]},
-    {root:98.00,  pad:[98.00,146.83,174.61,220.00,246.94],    // G9
-     scale:[196.00,220.00,246.94,261.63,293.66,329.63,392.00]},
-    {root:65.41,  pad:[130.81,164.81,196.00,246.94,329.63],   // Cmaj9
-     scale:[261.63,293.66,329.63,392.00,440.00,493.88,523.25]},
-    {root:55.00,  pad:[110.00,130.81,164.81,220.00,246.94],   // Am9
-     scale:[220.00,246.94,261.63,293.66,329.63,392.00,440.00]}
-  ];
-
-  // Rhodes: dois osciladores levemente desafinados → tremolo natural por batimento
-  function rhodes(freq,vol,t,dur){
-    var o1=actx.createOscillator(),o2=actx.createOscillator();
-    var g=actx.createGain(),flt=actx.createBiquadFilter();
-    o1.type='sine'; o1.frequency.value=freq;
-    o2.type='sine'; o2.frequency.value=freq*1.0038; // 6 cents → batimento ~2.5Hz
-    flt.type='lowpass'; flt.frequency.value=3200; flt.Q.value=.5;
-    g.gain.setValueAtTime(vol,t);
-    g.gain.exponentialRampToValueAtTime(vol*.6,t+.1);
-    g.gain.exponentialRampToValueAtTime(.0001,t+dur);
-    o1.connect(flt); o2.connect(flt); flt.connect(g);
-    g.connect(reverb); g.connect(master);
-    o1.start(t); o1.stop(t+dur+.15);
-    o2.start(t); o2.stop(t+dur+.15);
-  }
-
-  function bassNote(freq,t,dur){
-    var o=actx.createOscillator(),g=actx.createGain(),f=actx.createBiquadFilter();
-    o.type='sine'; o.frequency.value=freq;
-    f.type='lowpass'; f.frequency.value=260; f.Q.value=1.2;
-    g.gain.setValueAtTime(.0001,t);
-    g.gain.linearRampToValueAtTime(.32,t+.035);
-    g.gain.exponentialRampToValueAtTime(.0001,t+dur*.78);
-    o.connect(f); f.connect(g); g.connect(master);
-    o.start(t); o.stop(t+dur+.1);
-  }
-
-  function makeReverb(){
-    var sr=actx.sampleRate, len=Math.round(sr*2.8);
-    var buf=actx.createBuffer(2,len,sr);
-    for(var c=0;c<2;c++){
-      var d=buf.getChannelData(c);
-      for(var i=0;i<len;i++) d[i]=(Math.random()*2-1)*Math.pow(1-i/len,2.5);
-    }
-    var conv=actx.createConvolver(); conv.buffer=buf;
-    var wet=actx.createGain(); wet.gain.value=.28;
-    conv.connect(wet); wet.connect(master);
-    return conv;
-  }
-
-  // Vinyl crackle: pink noise contínuo, bem discreto
-  function startCrackle(){
-    if(crackleNode||!actx) return;
-    var sr=actx.sampleRate, len=sr*4;
-    var buf=actx.createBuffer(1,len,sr);
-    var d=buf.getChannelData(0);
-    var b0=0,b1=0,b2=0,b3=0,b4=0,b5=0,b6=0;
-    for(var i=0;i<len;i++){
-      var w=Math.random()*2-1;
-      b0=.99886*b0+w*.0555179; b1=.99332*b1+w*.0750759;
-      b2=.96900*b2+w*.1538520; b3=.86650*b3+w*.3104856;
-      b4=.55000*b4+w*.5329522; b5=-.7616*b5-w*.0168980;
-      d[i]=(b0+b1+b2+b3+b4+b5+b6+w*.5362)*.008;
-      b6=w*.115926;
-    }
-    var src=actx.createBufferSource(),g=actx.createGain(),flt=actx.createBiquadFilter();
-    src.buffer=buf; src.loop=true;
-    flt.type='lowpass'; flt.frequency.value=2000;
-    g.gain.value=.55;
-    src.connect(flt); flt.connect(g); g.connect(master);
-    src.start(); crackleNode=src;
-  }
-
-  function scheduleBar(startT,bi){
-    if(bi===0) setTimeout(startCrackle,0);
-    var ch=PROG[bi%4];
-    var h=function(){return(Math.random()-.5)*.022;}; // humanização ±22ms
-
-    // Baixo: nota raiz no beat 1, talvez no 3
-    bassNote(ch.root, startT+h(), BEAT*2.6);
-    if(Math.random()>.45) bassNote(ch.root*.75, startT+2*BEAT+h(), BEAT*1.8);
-
-    // Acordes Rhodes: beat 1 longo, às vezes reforço no 3
-    ch.pad.forEach(function(f,i){
-      rhodes(f,.04-i*.006, startT+h(), BEAT*3.5);
-    });
-    if(Math.random()>.5){
-      ch.pad.slice(1,4).forEach(function(f,i){
-        rhodes(f,.022-i*.004, startT+2*BEAT+h(), BEAT*1.6);
-      });
-    }
-
-    // Melodia: esparsa (0–2 notas por barra), timing aleatório
-    var n=Math.random()<.2?0:Math.random()<.55?1:2;
-    var slots=[0,1,2,3].sort(function(){return Math.random()-.5}).slice(0,n);
-    slots.forEach(function(b){
-      var f=ch.scale[Math.floor(Math.random()*ch.scale.length)];
-      var dur=BEAT*(.6+Math.random()*.9);
-      rhodes(f,.072, startT+b*BEAT+h(), dur);
-    });
-  }
-
-  var barIdx=0, nextBarTime=0;
-  function scheduler(){
-    while(nextBarTime<actx.currentTime+.5){
-      scheduleBar(nextBarTime,barIdx++);
-      nextBarTime+=BEAT*4;
-    }
-    timers.push(setTimeout(scheduler,150));
-  }
+  /* ── Música MP3 ── */
+  var audio=document.getElementById('bg-audio'), playing=false, fadeTimer=null;
 
   function startMusic(){
-    if(suspendTimer){clearTimeout(suspendTimer);suspendTimer=null;}
-    if(!actx){
-      actx=new(window.AudioContext||window.webkitAudioContext)();
-      master=actx.createGain();
-      master.connect(actx.destination);
-      reverb=makeReverb();
-    }
-    if(actx.state==='suspended') actx.resume();
-    master.gain.cancelScheduledValues(actx.currentTime);
-    master.gain.setValueAtTime(master.gain.value||.0001,actx.currentTime);
-    master.gain.linearRampToValueAtTime(.65,actx.currentTime+2.2);
-    barIdx=0; nextBarTime=actx.currentTime+.05;
-    scheduler();
+    if(fadeTimer){clearInterval(fadeTimer);fadeTimer=null;}
+    audio.volume=0; audio.loop=true;
+    audio.play().catch(function(){});
+    var vol=0;
+    fadeTimer=setInterval(function(){
+      vol=Math.min(vol+.025, .72);
+      audio.volume=vol;
+      if(vol>=.72){clearInterval(fadeTimer);fadeTimer=null;}
+    },120);
     playing=true; setPlaying(true);
   }
 
   function stopMusic(){
-    if(!actx) return;
-    master.gain.cancelScheduledValues(actx.currentTime);
-    master.gain.setValueAtTime(master.gain.value,actx.currentTime);
-    master.gain.linearRampToValueAtTime(.0001,actx.currentTime+1.2);
-    timers.forEach(clearTimeout); timers=[];
-    if(crackleNode){try{crackleNode.stop();}catch(e){} crackleNode=null;}
-    suspendTimer=setTimeout(function(){if(actx)actx.suspend();},1400);
+    if(fadeTimer){clearInterval(fadeTimer);fadeTimer=null;}
+    var vol=audio.volume;
+    fadeTimer=setInterval(function(){
+      vol=Math.max(vol-.04, 0);
+      audio.volume=vol;
+      if(vol<=0){audio.pause();clearInterval(fadeTimer);fadeTimer=null;}
+    },80);
     playing=false; setPlaying(false);
   }
 
