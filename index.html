@@ -46,34 +46,31 @@
       line-height:1.45;color:var(--silver-b);margin-bottom:.8rem
     }
     .popup-sub{
-      font-size:clamp(1rem,3vw,1.15rem);font-weight:300;
-      color:var(--silver-d);line-height:1.7;margin-bottom:1.4rem
+      font-size:clamp(1rem,3vw,1.12rem);font-weight:300;
+      color:var(--silver-d);line-height:1.75;margin-bottom:1.6rem
     }
-    .popup-label{
-      display:block;font-family:'Cormorant SC',serif;
-      font-size:clamp(.75rem,2.5vw,.88rem);font-weight:400;
-      letter-spacing:.28em;color:var(--silver);
-      text-transform:uppercase;margin-bottom:.6rem
+    .popup-accent{
+      color:var(--blue);font-weight:400;
     }
     #popup-input{
-      width:100%;background:rgba(255,255,255,.06);
-      border:1px solid rgba(184,196,212,.25);border-radius:1px;
+      width:100%;background:rgba(90,175,255,.07);
+      border:1px solid rgba(90,175,255,.35);border-radius:1px;
       padding:1rem 1.3rem;
       font-family:'Cormorant Garamond',serif;font-size:clamp(1.25rem,4vw,1.5rem);
       font-weight:300;color:var(--white);outline:none;text-align:center;
-      transition:border-color .3s;-webkit-appearance:none;appearance:none
+      transition:border-color .3s,background .3s;-webkit-appearance:none;appearance:none
     }
-    #popup-input::placeholder{color:var(--silver-d);opacity:.5}
-    #popup-input:focus{border-color:rgba(184,196,212,.52)}
+    #popup-input::placeholder{color:rgba(90,175,255,.4)}
+    #popup-input:focus{border-color:rgba(90,175,255,.7);background:rgba(90,175,255,.11)}
     #popup-btn{
-      margin-top:1.3rem;width:100%;padding:1.05rem 2rem;
+      margin-top:1.1rem;width:100%;padding:1.05rem 2rem;
       font-family:'Cormorant SC',serif;font-size:clamp(.72rem,2.2vw,.82rem);
-      letter-spacing:.36em;text-transform:uppercase;color:var(--silver-b);
-      background:rgba(255,255,255,.07);border:1px solid rgba(184,196,212,.3);
+      letter-spacing:.36em;text-transform:uppercase;color:#9dd4ff;
+      background:rgba(90,175,255,.12);border:1px solid rgba(90,175,255,.35);
       border-radius:1px;cursor:pointer;transition:all .3s;
       -webkit-tap-highlight-color:transparent;min-height:52px
     }
-    #popup-btn:hover,#popup-btn:active{background:rgba(255,255,255,.13);border-color:rgba(184,196,212,.52)}
+    #popup-btn:hover,#popup-btn:active{background:rgba(90,175,255,.22);border-color:rgba(90,175,255,.6)}
 
     /* ══ MAIN ══════════════════════════════════════════════ */
     #main{opacity:0;transition:opacity 1s ease}
@@ -496,10 +493,8 @@
 <div id="popup-overlay" role="dialog" aria-modal="true">
   <div id="popup-box">
     <span class="popup-crown">Convite Exclusivo</span>
-    <h1 class="popup-title">Esse convite do Tiago é exclusivo.</h1>
-    <p class="popup-sub">Para acessar, me diz qual é o seu nome.</p>
-    <label class="popup-label" for="popup-input">Primeiro nome</label>
-    <input id="popup-input" type="text" placeholder="Ex: Pedro"
+    <p class="popup-sub">Esse é um convite do Tiago para você.<br>Para acessar, digite seu <span class="popup-accent">primeiro nome</span></p>
+    <input id="popup-input" type="text" placeholder="Seu nome"
       autocomplete="given-name" maxlength="40" inputmode="text"/>
     <button id="popup-btn" type="button">Acessar o convite</button>
   </div>
@@ -598,7 +593,6 @@
       <div class="hr-fancy rev"><div class="hr-d"></div></div>
 
       <div class="rev-r">
-        <span class="eyebrow">Uma noite singular</span>
         <h2 class="sec-title" style="margin-bottom:2rem">Só uns <em>spoilers</em> dessa noite...</h2>
       </div>
 
@@ -610,6 +604,9 @@
         <figure class="simg simg-5"><img src="photos/5.jpg" alt=""></figure>
         <figure class="simg simg-6"><img src="photos/6.jpg" alt=""></figure>
       </div>
+      <p style="text-align:center;margin-top:1.8rem;font-family:'Cormorant Garamond',serif;font-size:clamp(.88rem,2.4vw,.98rem);font-style:italic;color:var(--silver-d);letter-spacing:.03em;opacity:.75">
+        Confirme sua presença ao final dessa página.
+      </p>
     </div>
   </section>
 
